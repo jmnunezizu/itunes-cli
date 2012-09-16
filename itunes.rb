@@ -13,10 +13,37 @@ $itunes.run if !$itunes.is_running?
 
 class ITunesCli
 
-  @@version = "0.1"
+  VERSION = "0.1"
+
+  def add(path)
+    num_tunes = 0
+    previous_dir = nil
+    time = Benchmark.realtime do
+      Find.find(path) do |f|
+        if f.match(/\.m4a|.mp3\Z/)
+          num_tunes = num_tunes.next
+          current_dir = File.dirname(f)
+          if current_dir != previous_dir
+            previous_dir = current_dir
+            print "[ "; print current_dir.color(:cyan); print " ]\n";
+          end
+          self.add_to_itunes(f)
+        end
+      end
+    end
+    
+    time_string = (time * 100).round() / 100.0
+    puts
+    puts "".ljust(80, "-")
+    puts "Summary:"
+    puts "".ljust(80, "-")
+    puts "Total time: #{time_string} seconds"
+    puts "Files added:  #{num_tunes}"
+    puts "".ljust(80, "-")
+  end
 
   def self.version
-    @@version
+    VERSION
   end
 
   def help
@@ -31,7 +58,7 @@ class ITunesCli
   end
 
   def version
-    print "itunescli ", @@version, "\n"
+    print "itunescli ", VERSION, "\n"
     exit(0)
   end
 
@@ -64,31 +91,7 @@ begin
   opts.each do |opt, arg|
     case opt
       when "--add"
-        directory = arg
-        num_tunes = 0
-        previous_dir = nil
-        time = Benchmark.realtime do
-          Find.find(directory) do |f|
-            if f.match(/\.m4a|.mp3\Z/)
-              num_tunes = num_tunes.next
-              current_dir = File.dirname(f)
-              if current_dir != previous_dir
-                previous_dir = current_dir
-                print "[ "; print current_dir.color(:cyan); print " ]\n";
-              end
-              itunescli.add_to_itunes(f)
-            end
-          end
-        end
-        
-        time_string = (time * 100).round() / 100.0
-        puts
-        puts "".ljust(80, "-")
-        puts "Summary:"
-        puts "".ljust(80, "-")
-        puts "Total time: #{time_string} seconds"
-        puts "Files added:  #{num_tunes}"
-        puts "".ljust(80, "-")
+        itunescli.add(arg)
 
       when "--help"
         itunescli.help
